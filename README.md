@@ -326,3 +326,27 @@ export default {
 
 - CORSを設定する
 
+```
+# backend/Gemfile
+
+gem 'rack-cors'
+
+
+# backend/config/initializers/cors.rb
+
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    # frontendのコンテナip
+    origins '192.168.32.4:3000'
+
+    resource '*',
+      headers: :any,
+      methods: [:get, :post, :put, :patch, :delete, :options, :head]
+  end
+end
+
+
+# bundle install
+```
+
+###### これ以降の変更についてはエラーが発生しているので、修正する
