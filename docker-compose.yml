@@ -1,0 +1,31 @@
+version: '3'
+services:
+  db:
+    container_name: app_db
+    image: postgres:11.5
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./backend/db/pgdata:/var/lib/postgresql/data
+
+  backend:
+    container_name: app_backend
+    build: ./backend
+    command: /bin/bash -c "rm -rf tmp/pids/server.pid; bundle exec rails s -p 3000 -b 0.0.0.0"
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+
+  frontend:
+    container_name: app_frontend
+    build: ./frontend
+    command: yarn dev
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - '8080:3000'
+    depends_on:
+      - backend
