@@ -50,5 +50,5 @@ module Api::V1
     def list_params
       params.require(:list).permit(:title, :excerpt)
     end
-end
+  end
 end

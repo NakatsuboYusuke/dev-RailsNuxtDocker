@@ -299,3 +299,30 @@ end
 ```
 http://localhost:3000/api/v1/lists
 ```
+
+### フロントエンドの作成
+
+- プロキシを設定する<br>
+フロントエンドからのリクエストを、APIのエンドポイント(URI)にプロキシさせる
+
+```
+
+export default {
+  :<snip>
+  axios: {
+    proxy: true
+  },
+  proxy: {
+    '/api/v1/': {
+      target: 'http://localhost:3000/api/v1/lists',
+      pathRewrite: {
+        '^/api/v1/': '/api/v1/'
+      },
+    }
+  }
+}
+
+```
+
+- CORSを設定する
+
