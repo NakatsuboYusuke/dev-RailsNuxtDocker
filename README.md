@@ -162,7 +162,7 @@ development:
 :<snip>
 ```
 
-- コンテナをビルド
+- サービスの構築、再構築
 
 ```
 $ docker-compose build
@@ -174,6 +174,12 @@ $ docker-compose build
 $ docker-compose run --rm backend rails db:create
 ```
 
+- コンテナを作成、開始
+
+```
+$ docker-compose up
+```
+
 - ローカルサーバーにアクセスし動作を確認
 
 ```
@@ -182,4 +188,114 @@ http://localhost:3000/
 
 # Nuxt.js
 http://localhost:8080/
+
+// サービスの停止
+$ docker-compose stop
+
+// コンテナの停止
+$ docker-compose down
+```
+
+### バックエンドの作成
+
+- バックエンドのコンテナに接続
+
+```
+// $ docker-compose exec コンテナ名 bash
+
+$ docker-compose exec backend bash
+```
+
+- scaffoldでリストを作成
+
+```
+#rails g scaffold List title:string excerpt:text
+#rails db:migrate
+
+// seedデータを追加
+# backend/db/seeds.rb
+3.times {|n| List.create(title: "Test-title-#{n}", excerpt: "Test-excerpt-#{n}")}
+
+#rails db:seed
+```
+
+- ルーティングを編集
+
+```
+# backend/config/routes.rb
+
+Rails.application.routes.draw do
+  namespace :api, format: 'json' do
+    namespace :v1 do
+      resources :lists
+    end
+  end
+end
+```
+
+- コントローラを編集
+
+```
+# backend/app/controllers/api/v1/lists_controller.rb
+
+module Api::V1
+  class ListsController < ApplicationController
+    before_action :set_list, only: [:show, :update, :destroy]
+
+    # GET /lists
+    def index
+      @lists = List.all
+
+      render json: @lists
+    end
+
+    # GET /lists/1
+    def show
+      render json: @list
+    end
+
+    # POST /lists
+    def create
+      @list = List.new(list_params)
+
+      if @list.save
+        render json: @list, status: :created, location: @list
+      else
+        render json: @list.errors, status: :unprocessable_entity
+      end
+    end
+
+    # PATCH/PUT /lists/1
+    def update
+      if @list.update(list_params)
+        render json: @list
+      else
+        render json: @list.errors, status: :unprocessable_entity
+      end
+    end
+
+    # DELETE /lists/1
+    def destroy
+      @list.destroy
+    end
+
+    private
+
+    # Use callbacks to share common setup or constraints between actions.
+    def set_list
+      @list = List.find(params[:id])
+    end
+
+    # Only allow a trusted parameter "white list" through.
+    def list_params
+      params.require(:list).permit(:title, :excerpt)
+    end
+  end
+end
+```
+
+- ルートにアクセスしJSONが返ってきているか確認する
+
+```
+http://localhost:3000/api/v1/lists
 ```
