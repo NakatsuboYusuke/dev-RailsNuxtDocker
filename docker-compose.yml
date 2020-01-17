@@ -7,6 +7,9 @@ services:
       - TZ=Asia/Tokyo
     volumes:
       - ./backend/db/pgdata:/var/lib/postgresql/data
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.2
 
   backend:
     container_name: app_backend
@@ -15,9 +18,14 @@ services:
     volumes:
       - ./backend:/app/backend
     ports:
-      - '3000:3000'
+      - '8080:8080'
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.3
+    tty: true
+    stdin_open: true
 
   frontend:
     container_name: app_frontend
@@ -26,6 +34,18 @@ services:
     volumes:
       - ./frontend:/app/frontend
     ports:
-      - '8080:3000'
+      - '3000:3000'
     depends_on:
       - backend
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.4
+    tty: true
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.32.0/20

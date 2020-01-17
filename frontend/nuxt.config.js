@@ -38,7 +38,20 @@ export default {
   ** Nuxt.js modules
   */
   modules: [
+    '@nuxtjs/vuetify',
+    '@nuxtjs/axios'
   ],
+  axios: {
+    proxy: true
+  },
+  proxy: {
+    '/api/v1/': {
+      target: 'http://192.168.32.3:8080',
+      pathRewrite: {
+        '^/api/v1/': '/api/v1/'
+      },
+    }
+  },
   /*
   ** Build configuration
   */
