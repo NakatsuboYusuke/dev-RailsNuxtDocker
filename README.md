@@ -9,7 +9,7 @@ This Repository is for Third Study Nuxt.js + Ruby on Rails API + Docker<br>
 - Ruby on Rails API 5.2.3
 - Node 12.0.0
 - yarn 1.17.3
-- Nuxt.js 2.6.11
+- Nuxt.js 2.11.00
 - PostgreSQL 11.5
 - Docker 19.03.5
 
@@ -80,6 +80,9 @@ services:
       - TZ=Asia/Tokyo
     volumes:
       - ./backend/db/pgdata:/var/lib/postgresql/data
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.2
 
   backend:
     container_name: app_backend
@@ -88,9 +91,14 @@ services:
     volumes:
       - ./backend:/app/backend
     ports:
-      - '3000:3000'
+      - '8080:8080'
     depends_on:
       - db
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.3
+    tty: true
+    stdin_open: true
 
   frontend:
     container_name: app_frontend
@@ -99,9 +107,21 @@ services:
     volumes:
       - ./frontend:/app/frontend
     ports:
-      - '8080:3000'
+      - '3000:3000'
     depends_on:
       - backend
+    networks:
+      app_net:
+        ipv4_address: 192.168.32.4
+    tty: true
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.32.0/20
 ```
 
 - frontend/Dockerfileを生成
@@ -184,10 +204,10 @@ $ docker-compose up
 
 ```
 # Ruby on Rails API
-http://localhost:3000/
+http://localhost:8080/
 
 # Nuxt.js
-http://localhost:8080/
+http://localhost:3000/
 
 // サービスの停止
 $ docker-compose stop
@@ -309,17 +329,22 @@ http://localhost:3000/api/v1/lists
 
 export default {
   :<snip>
+  modules: [
+    '@nuxtjs/vuetify',
+    '@nuxtjs/axios'
+  ],
   axios: {
     proxy: true
   },
   proxy: {
     '/api/v1/': {
-      target: 'http://localhost:3000/api/v1/lists',
+      target: 'http://192.168.32.3:8080',
       pathRewrite: {
         '^/api/v1/': '/api/v1/'
       },
     }
-  }
+  },
+  :<snip>
 }
 
 ```
@@ -349,4 +374,44 @@ end
 # bundle install
 ```
 
-###### これ以降の変更についてはエラーが発生しているので、修正する
+### これ以降の変更についてはエラーが発生しているので、修正する
+
+### メモ
+
+#### CORS(Cross-Origin Resource Sharing)
+別のオリジンから関連するリソースを取得する(クロスサイトHTTPリクエスト)ためのルール、のこと。
+
+##### オリジン
+スキーム、ホスト、ポートの組み合わせ、のこと。
+
+###### スキーム
+通信手段を示す情報のこと。<br>
+ex. https://, ftp://
+
+###### ホスト
+ネットワークに接続されたコンピュータ、のこと(サーバー)
+
+###### ポート
+ネットワークからコンピュータに接続するための「ドア」、のこと。
+
+```
+// サンプル
+
+https://www.example.com:3000/example/index.html
+
+スキーム = http://
+ポスト = www.example.com
+ポート = 3000
+```
+
+##### Same Origin Policy(同一オリジンポリシー)
+あるページを開いたとき関連するリソースは同じオリジンからしか取得できない、仕組みのこと。
+セキュリティ対策のための仕組みで、個人情報の保護や外部からの攻撃から守る。
+
+###### 同一オリジンポリシーの制限を受けるAPI
+
+- XMLHttpRequest
+- Canvas
+- Web Storage
+- X-Frame-Options
+
